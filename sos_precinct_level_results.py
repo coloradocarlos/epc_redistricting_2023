@@ -44,6 +44,7 @@ district_types = {
         'districts': tuple(range(1, 6)),   # 5 commissioners
         'precinct_match_group_number': 3,  # for regex
         'county_number': 21,               # El Paso County
+        'county_name': 'El Paso'
     },
 }
 
@@ -59,6 +60,11 @@ statewide_races_by_year = {
     2020: {
         'us_president': r'President/Vice President',
         'us_senator': r'United States Senator',
+    },
+    2016: {
+        'us_president': r'President/Vice President',
+        'us_senator': r'United States Senator',
+        'regent_at_large': r'Regent Of The University Of Colorado - At Large',
     },
 }
 
@@ -227,6 +233,10 @@ csv_column_names = {
         'office_column_name': 'Office/Issue/Judgeship',
         'vote_count_column_name': 'Candidate Votes',
     },
+    2016: {
+        'office_column_name': 'Office/Issue/Judgeship',
+        'vote_count_column_name': 'Candidate Votes',
+    },
 }
 
 
@@ -304,7 +314,13 @@ def precinct_number_matcher(precinct_number, year, county, commissioner_precinct
         # For provisional precincts, we use the County name and Year to determine the districts they voted in
         precinct_dict = dict()
         for district_type in district_types.keys():
-            precinct_dict[district_type] = provisional_precincts[year][county][district_type]
+            if 'county_name' in district_types[district_type] and county != district_types[district_type]['county_name']:
+                # Non EPC county with provisional district
+                print(f"Found provisional {county=}")
+                precinct_dict[district_type] = None
+            else:
+                # EPC county with provisional district
+                precinct_dict[district_type] = provisional_precincts[year][county][district_type]
         return precinct_dict
     else:
         raise Exception(f"Unable to match precinct number {precinct_number}!")
@@ -392,9 +408,12 @@ if __name__ == "__main__":
         },
         2020: {
             'csvin': '2020GEPrecinctLevelResultsPosted.csv',
-            # 'commissioner_precincts_in': 'epc_precincts_2019.csv',
             'commissioner_precincts_in': 'epc_precincts_2022.csv'
         },
+        2016: {
+            'csvin': '2016GeneralResultsPrecinctLevel.csv',
+            'commissioner_precincts_in': 'epc_precincts_2019.csv',
+        }
     }
 
     for year in years.keys():
