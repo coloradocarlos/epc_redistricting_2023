@@ -40,12 +40,14 @@ sos_csv_column_names = {
     },
 }
 
+
 def statewide_race_matcher(year, row):
     for race in statewide_races_by_year[year].keys():
         if row[sos_csv_column_names[year]['office_column_name']] == statewide_races_by_year[year][race]:
             # Return 'us_president' or 'us_senator'
             return race
     return None
+
 
 def init_statewide_results_dict(year):
     """
@@ -69,6 +71,7 @@ def init_statewide_results_dict(year):
                 district_results[district] = dict(county_list=[], democrat=0, republican=0, other=0)
             results[race][district_type] = district_results
     return results
+
 
 def precinct_number_matcher(precinct_number, year, county, district_block_assignment, precinct_block_assignment):
     # https://www.sos.state.co.us/pubs/elections/FAQs/VoterFAQs.html
@@ -95,13 +98,13 @@ def precinct_number_matcher(precinct_number, year, county, district_block_assign
                     try:
                         # Lookup block by short precinct number
                         block = precinct_block_assignment[short_precinct_number]
-                    except KeyError as ke:
+                    except KeyError:
                         print(f"Unhandled precinct_number: {short_precinct_number=} {precinct_number=}")
                         block = None
                     try:
                         # Lookup district by block
                         precinct_dict[district_type] = district_block_assignment[block]
-                    except KeyError as ke:
+                    except KeyError:
                         print(f"Unhandled block number: {block=} {precinct_number=}")
                         precinct_dict[district_type] = None
                 else:
@@ -114,6 +117,7 @@ def precinct_number_matcher(precinct_number, year, county, district_block_assign
     elif precinct_number == 'Provisional':
         raise NotImplementedError("Provisional precincts not supported")
 
+
 def write_csv_files(year, results, plan_name):
     """
     Write the results for each year and statewide office by district type
@@ -121,7 +125,7 @@ def write_csv_files(year, results, plan_name):
     """
     # Recursively create results directory
     outdir = f"./epc_election_data/{plan_name}"
-    os.makedirs(outdir, exist_ok = True)
+    os.makedirs(outdir, exist_ok=True)
 
     # Generate results
     header = ('district', 'counties', 'democrat', 'republican', 'other')
@@ -146,7 +150,7 @@ def process_precinct_level_results(the_plan):
     with open(the_plan['district_block_assignment_file'], 'r') as fp1:
         csvreader = csv.DictReader(fp1)
         for row in csvreader:
-            # Determine the column headings 
+            # Determine the column headings
             block_header = list(row.keys())[0]  # BLOCK or GEOID20
             district_header = list(row.keys())[1]  # DISTRICT or District
             district_block_assignment[row[block_header]] = int(row[district_header])
@@ -160,7 +164,7 @@ def process_precinct_level_results(the_plan):
     with open(the_plan['precinct_block_assignment_file'], 'r') as fp1:
         csvreader = csv.DictReader(fp1)
         for row in csvreader:
-            # Determine the column headings 
+            # Determine the column headings
             block_header = 'BLOCK'
             precinct_header = 'PRECINCT'
             precinct_block_assignment[int(row[precinct_header])] = row[block_header]
@@ -236,6 +240,5 @@ if __name__ == "__main__":
     #     'district_block_assignment_file': 'plans/block-assignments-myplan.csv',  # Changes with each plan
     #     'precinct_block_assignment_file': 'epc_files/precinct_block_assign_file.csv',  # Fixed for all plans
     # }
-
 
     process_precinct_level_results(the_plan)
