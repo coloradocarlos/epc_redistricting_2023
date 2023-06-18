@@ -32,6 +32,9 @@ statewide_races_by_year = {
     },
 }
 
+# For computing partisan index. Don't use a popular governor or an SOS who has been in the news a lot.
+down_ballot_statewide_races = ('treasurer', 'attorney_general', 'boe_at_large')
+
 # SOS election results column names changed over time for some reason
 sos_csv_column_names = {
     2022: {
@@ -39,6 +42,8 @@ sos_csv_column_names = {
         'vote_count_column_name': 'Votes',
     },
 }
+
+epc_election_data_dir = "./epc_election_data"
 
 
 def statewide_race_matcher(year, row):
@@ -124,7 +129,7 @@ def write_csv_files(year, results, plan_name):
     For 2022, there were 6 statewide offices
     """
     # Recursively create results directory
-    outdir = f"./epc_election_data/{plan_name}"
+    outdir = f"{epc_election_data_dir}/{plan_name}"
     os.makedirs(outdir, exist_ok=True)
 
     # Generate results
@@ -133,14 +138,64 @@ def write_csv_files(year, results, plan_name):
         for district_type in results[race].keys():
             csvout = f"{outdir}/{year}_{race}_by_{district_type}.csv"
             print(f"Writing {csvout}")
-            with open(csvout, 'w') as fp2:
-                csvwriter = csv.DictWriter(fp2, fieldnames=header, extrasaction='ignore')
+            with open(csvout, 'w') as fp:
+                csvwriter = csv.DictWriter(fp, fieldnames=header, extrasaction='ignore')
                 csvwriter.writeheader()
                 for district_number in results[race][district_type].keys():
                     row = results[race][district_type][district_number]
                     row['district'] = district_number
                     row['counties'] = ' - '.join(row['county_list'])
                     csvwriter.writerow(row)
+
+
+def compute_partisan_index(race_result_detail):
+    # R / Total - D / Total
+    # Positive number is a R lean
+    # Negative number is a D lean
+    total_votes = race_result_detail['democrat'] + race_result_detail['republican']
+    partisan_index = race_result_detail['republican'] / total_votes - race_result_detail['democrat'] / total_votes
+    return partisan_index
+
+
+def write_partisan_index_files(year, results, plan_name):
+    """
+    Write the results for each year and the partisan index for the statewide offices
+    """
+    # Recursively create results directory
+    outdir = f"{epc_election_data_dir}/{plan_name}"
+    os.makedirs(outdir, exist_ok=True)
+
+    header = ['district']
+    header.extend(down_ballot_statewide_races)
+    header.extend(['partisan_index'])
+
+    # Makes a kind of pivot table
+    partisan_index_table = []
+
+    # Iterate through the districts, producing a column for the race which is the partisan index (R - D)
+    for district_type in district_types.keys():
+        for district_number in district_types[district_type]['districts']:
+            row = {'district': district_number}
+            for race in results.keys():
+                for district_number_in_results in results[race][district_type].keys():
+                    if district_number_in_results == district_number:
+                        row[race] = compute_partisan_index(results[race][district_type][district_number])
+            # Compute average
+            indices = [row[r] for r in down_ballot_statewide_races]
+            avg = sum(indices) / len(indices)
+            row['partisan_index'] = avg
+            partisan_index_table.append(row)
+    # pp = pprint.PrettyPrinter()
+    # pp.pprint(partisan_index_table)
+
+    for district_type in district_types.keys():
+        csvout = f"{outdir}/{year}_statewide_partisan_index_by_{district_type}.csv"
+        print(f"Writing {csvout}")
+        with open(csvout, 'w') as fp:
+            csvwriter = csv.DictWriter(fp, fieldnames=header, extrasaction='ignore')
+            csvwriter.writeheader()
+            for row in partisan_index_table:
+                csvwriter.writerow(row)
 
 
 def process_precinct_level_results(the_plan):
@@ -212,10 +267,7 @@ def process_precinct_level_results(the_plan):
                     # Update county list for this district
                     if row['County'] not in results_row['county_list']:
                         results_row['county_list'].append(row['County'])
-        # After processing all rows in the precinct level CSV, output the results by district
-        # pp = pprint.PrettyPrinter()
-        # pp.pprint(results)
-        write_csv_files(year, results, the_plan['plan_name'])
+    return results
 
 
 if __name__ == "__main__":
@@ -241,4 +293,14 @@ if __name__ == "__main__":
     #     'precinct_block_assignment_file': 'epc_files/precinct_block_assign_file.csv',  # Fixed for all plans
     # }
 
-    process_precinct_level_results(the_plan)
+    results = process_precinct_level_results(the_plan)
+
+    # After processing all rows in the precinct level CSV, output the results by district
+    # pp = pprint.PrettyPrinter()
+    # pp.pprint(results)
+
+    # Output election results
+    write_csv_files(the_plan['year'], results, the_plan['plan_name'])
+
+    # Output partisan index
+    write_partisan_index_files(the_plan['year'], results, the_plan['plan_name'])
