@@ -398,7 +398,7 @@ if __name__ == "__main__":
     #     'year': 2022,
     #     'plan_name': 'myplan',
     #     'statewide_election_results': 'sos_files/2022GeneralPrecinctLevelResultsPublic.csv',
-    #     'countywide_election_results': None,
+    #     'countywide_election_results': epc_2022_election_results,
     #     'district_block_assignment_file': 'plans/block-assignments-myplan.csv',  # Changes with each plan
     #     'precinct_block_assignment_file': 'epc_files/precinct_block_assign_file.csv',  # Fixed for all plans
     # }
