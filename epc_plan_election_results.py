@@ -30,6 +30,7 @@ statewide_races_by_year = {
         'state_treasurer': r'State Treasurer',
         'attorney_general': r'Attorney General',
         'boe_at_large': r'State Board of Education Member - At Large',
+        'us_senator': r'United States Senator',
     },
 }
 
@@ -384,24 +385,24 @@ if __name__ == "__main__":
         'county_treasurer': 'epc_files/2022/2022_General_SOVC_Public_treasurer.csv',
     }
     # Current commissioner districts
-    the_plan = {
-        'year': 2022,
-        'plan_name': 'current',
-        'statewide_election_results': 'sos_files/2022GeneralPrecinctLevelResultsPublic.csv',
-        'countywide_election_results': epc_2022_election_results,
-        'district_block_assignment_file': 'epc_files/epc_commissioner_districts_2022.csv',  # Changes with each plan
-        'precinct_block_assignment_file': 'epc_files/precinct_block_assign_file.csv',  # Fixed for all plans
-    }
-
-    # Another plan
     # the_plan = {
     #     'year': 2022,
-    #     'plan_name': 'myplan',
+    #     'plan_name': 'current',
     #     'statewide_election_results': 'sos_files/2022GeneralPrecinctLevelResultsPublic.csv',
     #     'countywide_election_results': epc_2022_election_results,
-    #     'district_block_assignment_file': 'plans/block-assignments-myplan.csv',  # Changes with each plan
+    #     'district_block_assignment_file': 'epc_files/epc_commissioner_districts_2022.csv',  # Changes with each plan
     #     'precinct_block_assignment_file': 'epc_files/precinct_block_assign_file.csv',  # Fixed for all plans
     # }
+
+    # Another plan
+    the_plan = {
+        'year': 2022,
+        'plan_name': 'cperez-proposal-20230712',
+        'statewide_election_results': 'sos_files/2022GeneralPrecinctLevelResultsPublic.csv',
+        'countywide_election_results': epc_2022_election_results,
+        'district_block_assignment_file': 'plans/block-assignments-cperez-20230712.csv',  # Changes with each plan
+        'precinct_block_assignment_file': 'epc_files/precinct_block_assign_file.csv',  # Fixed for all plans
+    }
 
     results = process_precinct_level_results(the_plan)
 
